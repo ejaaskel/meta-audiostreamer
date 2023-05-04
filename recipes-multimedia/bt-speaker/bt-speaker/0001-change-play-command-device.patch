@@ -1,0 +1,11 @@
+diff --git a/config.ini.default b/config.ini.default
+index 14bbe81..c24856b 100644
+--- a/config.ini.default
++++ b/config.ini.default
+@@ -1,5 +1,5 @@
+ [bt_speaker]
+-play_command = aplay -f cd -
++play_command = aplay -D hw:2,0,1 -f cd -
+ connect_command = /etc/bt_speaker/hooks/connect
+ disconnect_command = /etc/bt_speaker/hooks/disconnect
+ startup_command = /etc/bt_speaker/hooks/startup
