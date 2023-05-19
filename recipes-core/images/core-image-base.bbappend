@@ -14,7 +14,7 @@ IMAGE_INSTALL:append = " \
 #IMAGE_INSTALL:raspberrypi2:append = " \
 #    linux-firmware-mt7601u "
 IMAGE_INSTALL:append:raspberrypi2 = " \
-  audiostreamer-manager-client  rtl8821au "
+  audiostreamer-manager-client  rtl8821au hostapd hostapd-server "
 IMAGE_INSTALL:append:raspberrypi4 = " \
   audiostreamer-manager-server "
 
