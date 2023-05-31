@@ -10,20 +10,8 @@ IMAGE_INSTALL:append = " \
     bt-speaker \
 "
 
-
-#IMAGE_INSTALL:raspberrypi2:append = " \
-#    linux-firmware-mt7601u "
 IMAGE_INSTALL:append:raspberrypi2 = " \
-  audiostreamer-manager-client  rtl8821au hostapd hostapd-server "
+  audiostreamer-manager-client  rtl8821au hostapd hostapd-server dnsmasq-systemd "
 IMAGE_INSTALL:append:raspberrypi4 = " \
   audiostreamer-manager-server "
 
-#    pulseaudio \
-#    pulseaudio-server \
-#    pulseaudio-module-null-sink \
-#    pulseaudio-module-rtp-send \
-#    pulseaudio-module-rtp-recv \
-#    pulseaudio-module-zeroconf-publish \
-#    pulseaudio-module-zeroconf-discover \
-#    pulseaudio-module-native-protocol-tcp \
-#
