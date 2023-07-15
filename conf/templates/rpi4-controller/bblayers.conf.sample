@@ -11,7 +11,6 @@ BBLAYERS ?= " \
   ##OEROOT##/meta-yocto-bsp \
   ##OEROOT##/meta-raspberrypi \
   ##OEROOT##/meta-audiostreamer \
-  ##OEROOT##/meta-audiostreamer-private \
   ##OEROOT##/meta-rust \
   ##OEROOT##/meta-openembedded/meta-oe \
   ##OEROOT##/meta-openembedded/meta-python \
