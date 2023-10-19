@@ -4,6 +4,7 @@ LICENSE = "GPL-3.0-only"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d32239bcb673463ab874e80d47fae504"
 SRC_URI = "\
     git://github.com/lukasjapan/bt-speaker.git;protocol=https;branch=master \
+    file://bt-speaker.sh \
     file://fix-bt-speaker.patch \
     file://0001-change-play-command-device.patch \
 "
@@ -12,6 +13,10 @@ S = "${WORKDIR}/git"
 
 SRCREV = "55cb722b261004203ef0085204b90186c052b8d8"
 #inherit useradd
+
+inherit update-rc.d
+INITSCRIPT_NAME = "bt-speaker"
+INITSCRIPT_PARAMS = "defaults 90 10"
 
 #TARGET_CC_ARCH += "${LDFLAGS}"
 #EXTRA_OEMAKE:append = " 'LDFLAGS=${LDFLAGS}'"
@@ -49,6 +54,9 @@ do_install() {
     cp ${D}/opt/bt-speaker/codecs/librtpsbc.so ${D}/opt/bt-speaker/librtpsbc_aarch64.so
 
     chown -R root:root ${D}/opt/bt-speaker
+
+    install -d ${D}/${INIT_D_DIR}
+    install -m 0755 ${WORKDIR}/bt-speaker.sh ${D}${INIT_D_DIR}/bt-speaker
 }
 
 FILES:${PN}:append = " /opt/bt-speaker/*"
