@@ -1,0 +1,146 @@
+From 17d63a5769923520177017038c5b8fe196e9534a Mon Sep 17 00:00:00 2001
+From: ejaaskel <esa.jaaskela@suomi24.fi>
+Date: Sun, 1 Oct 2023 18:31:05 +0000
+Subject: [PATCH] start-stop-daemon: add chdir option
+
+Add option to change the running directory before starting the process.
+This can be done using -d or --chdir options. Add also test cases to
+start-stop-daemon to test out the directory change option.
+
+Upstream-Status: Submitted
+
+Signed-off-by: ejaaskel <esa.jaaskela@suomi24.fi>
+---
+ TODO                              |  2 --
+ debianutils/start_stop_daemon.c   | 21 ++++++++++++++-------
+ testsuite/start-stop-daemon.tests | 20 ++++++++++++++++++++
+ 3 files changed, 34 insertions(+), 9 deletions(-)
+
+diff --git a/TODO b/TODO
+index 72ae0f88d..6c7415a81 100644
+--- a/TODO
++++ b/TODO
+@@ -222,8 +222,6 @@ Minor stuff:
+ ---
+   unify progress_meter. wget, flash_eraseall, pipe_progress, fbsplash, setfiles.
+ ---
+-  support start-stop-daemon -d <chdir-path>
+----
+ 
+ (TODO list after discussion 11.05.2009)
+ 
+diff --git a/debianutils/start_stop_daemon.c b/debianutils/start_stop_daemon.c
+index 3e5dd9faa..88c2be11c 100644
+--- a/debianutils/start_stop_daemon.c
++++ b/debianutils/start_stop_daemon.c
+@@ -105,6 +105,7 @@ Misc options:
+ //usage:     "\n	-N N		Change nice level"
+ //usage:	)
+ //usage:     "\n	-c USER[:[GRP]]	Change user/group"
++//usage:     "\n	-d PATH		Change path"
+ //usage:     "\n	-m		Write PID to pidfile specified by -p"
+ //usage:     "\n-K only:"
+ //usage:     "\n	-s SIG		Signal to send"
+@@ -138,11 +139,12 @@ enum {
+ 	OPT_s          = (1 <<  8), // -s
+ 	OPT_u          = (1 <<  9), // -u
+ 	OPT_c          = (1 << 10), // -c
+-	OPT_x          = (1 << 11), // -x
+-	OPT_p          = (1 << 12), // -p
+-	OPT_OKNODO     = (1 << 13) * ENABLE_FEATURE_START_STOP_DAEMON_FANCY, // -o
+-	OPT_VERBOSE    = (1 << 14) * ENABLE_FEATURE_START_STOP_DAEMON_FANCY, // -v
+-	OPT_NICELEVEL  = (1 << 15) * ENABLE_FEATURE_START_STOP_DAEMON_FANCY, // -N
++	OPT_d          = (1 << 11), // -d
++	OPT_x          = (1 << 12), // -x
++	OPT_p          = (1 << 13), // -p
++	OPT_OKNODO     = (1 << 14) * ENABLE_FEATURE_START_STOP_DAEMON_FANCY, // -o
++	OPT_VERBOSE    = (1 << 15) * ENABLE_FEATURE_START_STOP_DAEMON_FANCY, // -v
++	OPT_NICELEVEL  = (1 << 16) * ENABLE_FEATURE_START_STOP_DAEMON_FANCY, // -N
+ };
+ #define QUIET (option_mask32 & OPT_QUIET)
+ #define TEST  (option_mask32 & OPT_TEST)
+@@ -391,6 +393,7 @@ static const char start_stop_daemon_longopts[] ALIGN1 =
+ 	"signal\0"       Required_argument "s"
+ 	"user\0"         Required_argument "u"
+ 	"chuid\0"        Required_argument "c"
++	"chdir\0"        Required_argument "d"
+ 	"exec\0"         Required_argument "x"
+ 	"pidfile\0"      Required_argument "p"
+ # if ENABLE_FEATURE_START_STOP_DAEMON_FANCY
+@@ -411,6 +414,7 @@ int start_stop_daemon_main(int argc UNUSED_PARAM, char **argv)
+ 	char *signame;
+ 	char *startas = NULL;
+ 	char *chuid;
++	char *chdir;
+ #if ENABLE_FEATURE_START_STOP_DAEMON_FANCY
+ //	char *retry_arg = NULL;
+ //	int retries = -1;
+@@ -420,7 +424,7 @@ int start_stop_daemon_main(int argc UNUSED_PARAM, char **argv)
+ 	INIT_G();
+ 
+ 	opt = GETOPT32(argv, "^"
+-		"KSbqtma:n:s:u:c:x:p:"
++		"KSbqtma:n:s:u:c:d:x:p:"
+ 		IF_FEATURE_START_STOP_DAEMON_FANCY("ovN:R:")
+ 			/* -K or -S is required; they are mutually exclusive */
+ 			/* -p is required if -m is given */
+@@ -432,7 +436,7 @@ int start_stop_daemon_main(int argc UNUSED_PARAM, char **argv)
+ 			"K:S:K--S:S--K:m?p:K?xpun"
+ 			IF_FEATURE_START_STOP_DAEMON_FANCY("q-v"),
+ 		LONGOPTS
+-		&startas, &cmdname, &signame, &userspec, &chuid, &execname, &pidfile
++		&startas, &cmdname, &signame, &userspec, &chuid, &chdir, &execname, &pidfile
+ 		IF_FEATURE_START_STOP_DAEMON_FANCY(,&opt_N)
+ 		/* We accept and ignore -R <param> / --retry <param> */
+ 		IF_FEATURE_START_STOP_DAEMON_FANCY(,NULL)
+@@ -560,6 +564,9 @@ int start_stop_daemon_main(int argc UNUSED_PARAM, char **argv)
+ 			setgroups(1, &ugid.gid);
+ 		}
+ 	}
++	if (opt & OPT_d) {
++		xchdir(chdir);
++	}
+ 	/* Try:
+ 	 * strace -oLOG start-stop-daemon -S -x /bin/usleep -a qwerty 500000
+ 	 * should exec "/bin/usleep", but argv[0] should be "qwerty":
+diff --git a/testsuite/start-stop-daemon.tests b/testsuite/start-stop-daemon.tests
+index 0757b1288..e1e49ab5f 100755
+--- a/testsuite/start-stop-daemon.tests
++++ b/testsuite/start-stop-daemon.tests
+@@ -11,6 +11,21 @@ testing "start-stop-daemon -x without -a" \
+ 	"0\n" \
+ 	"" ""
+ 
++testing "start-stop-daemon -x with -d on existing directory" \
++	'start-stop-daemon -S -d /tmp -x true 2>&1; echo $?' \
++	"0\n" \
++	"" ""
++
++testing "start-stop-daemon -x with -d on existing and check dir" \
++	'output=$(start-stop-daemon -S -d /tmp -x pwd); echo $output' \
++	"/tmp\n" \
++	"" ""
++
++testing "start-stop-daemon -x with --chdir on existing and check dir" \
++	'output=$(start-stop-daemon -S --chdir /tmp -x pwd); echo $output' \
++	"/tmp\n" \
++	"" ""
++
+ testing "start-stop-daemon -a without -x" \
+ 	'start-stop-daemon -S -a false 2>&1; echo $?' \
+ 	"1\n" \
+@@ -21,6 +36,11 @@ testing "start-stop-daemon without -x and -a" \
+ 	"1\n" \
+ 	"" ""
+ 
++testing "start-stop-daemon -x with -d on non-existing directory" \
++	'start-stop-daemon -S -d /non-existent -x true > /dev/null 2>&1; echo $?' \
++	"1\n" \
++	"" ""
++
+ # This runs /bin/false with argv[0..2] of { "qwerty", "false", NULL }.
+ #
+ # Unfortunately, this does not actually check argv[0] correctness,
+-- 
+2.34.1
+
